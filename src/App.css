@@ -1,0 +1,40 @@
+.App {
+  font-family: monospace;
+  font-size: 18px;
+  color: #ddd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.row {
+  display: flex;
+}
+
+.col {
+  width: 45px;
+  height: 45px;
+  border: 1px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.highlight {
+  background-color: lightyellow;
+  color: black;
+  animation-name: high;
+  animation-duration: 1s;
+  font-weight: bolder;
+}
+
+@keyframes high {
+  from {background-color: orange; color: #ddd;}
+  to {background-color: lightyellow; color: black;}
+}
+
+.controls {
+  margin-right: 3em;
+}
