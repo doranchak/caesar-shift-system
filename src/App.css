@@ -6,7 +6,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  margin-top: 1em;
+  /* height: 100vh; */
 }
 
 .row {
@@ -38,3 +39,6 @@
 .controls {
   margin-right: 3em;
 }
+
+.l {text-align: right; font-weight: bold;}
+.l:after {content: ": "}
