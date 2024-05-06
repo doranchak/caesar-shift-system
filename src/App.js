@@ -44,12 +44,49 @@ function App() {
   };
   function handleSubmit() {
   }
+  function selectKaczynski1() {
+    setPlaintext("KACZYNSKI");
+    setK(10);
+    setN(7);
+    setStart(-30);
+    setGrid(createGrid("KACZYNSKI", 10, 7, -30));
+  }
+  function selectKaczynski2() {
+    setPlaintext("THEODOREJKACZYNSKI");
+    setK(10);
+    setN(9);
+    setStart(-30);
+    setGrid(createGrid("THEODOREJKACZYNSKI", 10, 9, -30));
+  }
+  function selectTrees() {
+    setPlaintext("TREESTOBLOOMINWEEKS");
+    setK(10);
+    setN(6);
+    setStart(-40);
+    setGrid(createGrid("TREESTOBLOOMINWEEKS", 10, 6, -40));
+  }
+  function cl(row, col, highlight) {
+    // let cl = highlight ? "col highlight" : "col";
+    let shift = (n-1-row)*k + start;
+    if (shift == 0) return "plaintext col";
+    return "col";
+  }
+  
     
   return (
     <>
       <center>
         <form onSubmit={handleSubmit}>
           <table>
+            <tbody>
+              <tr>
+                <td>
+                  <a href="#" onClick={selectKaczynski1}>Kaczynski1</a> |&nbsp;
+                  <a href="#" onClick={selectKaczynski2}>Kaczynski2</a> |&nbsp;
+                  <a href="#" onClick={selectTrees}>Trees</a>
+                </td>
+                <td>
+                <table>
             <tbody>
               <tr>
                 <td className="l"><label>Plaintext</label></td>
@@ -97,6 +134,10 @@ function App() {
               </tr>
             </tbody>
           </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </form>
           {/* <button type="submit">Submit</button> */}
         <table>
@@ -126,12 +167,7 @@ function App() {
 function style(row, col, val) {
 }
 
-function cl(row, col, highlight) {
-  return highlight ? "col highlight" : "col";
-}
-
 function createGrid(plaintext, k, n, start) {
-  console.log(plaintext);
   const grid = [];
   let rows = n;
   let cols = plaintext.length + 1;  

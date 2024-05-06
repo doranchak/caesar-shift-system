@@ -21,6 +21,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  color: black;
+  background-color: lightyellow;
+}
+
+.plaintext {
+  background-color: lightgreen;
+  font-weight: bold;
 }
 
 .highlight {
