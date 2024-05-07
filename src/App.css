@@ -26,16 +26,17 @@
 }
 
 .plaintext {
-  background-color: lightgreen;
+  background-color: #C1FFD5;
   font-weight: bold;
 }
 
-.highlight {
-  background-color: lightyellow;
-  color: black;
-  animation-name: high;
-  animation-duration: 1s;
-  font-weight: bolder;
+.highlight1 {
+  background-color: darkorange;
+  font-weight: bold;
+}
+.highlight2 {
+  background-color: darkorange;
+  font-weight: bold;
 }
 
 @keyframes high {
