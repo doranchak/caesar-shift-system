@@ -10,8 +10,16 @@
   /* height: 100vh; */
 }
 
+.nou a { 
+  text-decoration: none; 
+} 
+
 .row {
   display: flex;
+}
+.row_end {
+  display: flex;
+  margin-top: 1em;
 }
 
 .col {
@@ -23,6 +31,26 @@
   align-items: center;
   color: black;
   background-color: lightyellow;
+}
+.col_end {
+  width: 45px;
+  height: 45px;
+  border: 1px solid white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+}
+
+.col_end_highlight {
+  width: 45px;
+  height: 45px;
+  border: 1px solid darkorange;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-weight: bolder;
 }
 
 .plaintext {
@@ -50,3 +78,4 @@
 
 .l {text-align: right; font-weight: bold;}
 .l:after {content: ": "}
+

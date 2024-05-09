@@ -1,10 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, {useState} from 'react';
+import words from './words.js';
+import LengthSelector from './LengthSelector.js';
 import './App.css';
-
-// let plaintext = "TREESTOBLOOMINWEEKS";
-// let k = 10; // shift increments
-// let n = 6; // number of shifts
-// let start = -40; // starting shift value
 
 function App() {
   // plaintext
@@ -21,10 +18,26 @@ function App() {
   // gh[3][2] = 1;
   // gh[5][9] = 1;
   const [gridHighlight, setGridHighlight] = useState(gh);  
-  const [grid, setGrid] = useState(createGrid(plaintext, k, n, start));
+  let gtmp = createGrid(plaintext, k, n, start);
+  const [grid, setGrid] = useState(gtmp);
+  // string versions of grid columns for more convenient searching
+  const [columns, setColumns] = useState(columnsFrom(gtmp));
+  // search keyword
+  const [keyword, setKeyword] = useState('');
+  // search results
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchResult, setSearchResult] = useState(null);
+  // word list
+  const [wordList, setWordList] = useState([]);
+  // word list search results
+  const [wordListResults, setWordListResults] = useState([]);
+  const [wordListResultsAll, setWordListResultsAll] = useState([]);
+  const [wordListResultsLengths, setWordListResultsLengths] = useState([]);
+  const [selectedWordListResult, setSelectedWordListResult] = useState(-1);  
+  const [wordListLengthFilter, setWordListLengthFilter] = useState(0);  
 
   const plaintextChange = (event) => {
-    let val = event.target.value;
+    let val = event.target.value.toUpperCase();
     setPlaintext(val);
     setGrid(createGrid(val, k, n, start));
   };
@@ -46,16 +59,104 @@ function App() {
     setStart(val);
     setGrid(createGrid(plaintext, k, n, val));
   };
-  function handleSubmit() {
+  const updateKeyword = (event) => {
+    let val = event.target.value.toUpperCase();
+    setKeyword(val);
+  };
+  const doSearch = () => {
+    let matches = doSearchKeyword(keyword);
+    doSearchUpdate(matches);
+  };
+
+  const doSearchKeyword = (word) => {
+    let matches = [];
+    for (let startcol = 0; startcol < columns.length - word.length + 1; startcol++) {
+      let match = [];
+      for (let i=0; i<word.length; i++) {
+        let col = startcol+i;
+        let ind = columns[col].indexOf(word[i]);
+        if (ind == -1) {
+          match = [];
+          break;
+        }
+        match.push([ind, col]);
+      }
+      if (match.length > 0) {
+        matches.push(match);
+      }
+    }
+    return matches;
   }
+  const doSearchUpdate = (matches) => {
+    if (matches.length == 0) {
+      setSearchResult("No results.");
+      updateGrid(plaintext, k, n, start, []);
+    }
+    else {
+      setSearchResult(matches.length + " matches.");
+      updateGrid(plaintext, k, n, start, matches[0]);
+    }
+    setSearchResults(matches);
+  }
+  const doClear = (event) => {
+    setSearchResult("");
+    setKeyword("");
+  }
+
+  const doFindWords = (limitPerLength, minLength) => {
+    let wordFreqPairs = wordList;
+    if (wordFreqPairs.length == 0) {
+      wordFreqPairs = parseTextContent(words);
+      setWordList(wordFreqPairs);
+    }
+    let hits = [];
+    let maxlengths = [];
+    wordFreqPairs.map((pair, index) => {
+      let [word, freq] = pair;
+      let len = word.length;
+      if (len >= minLength) {
+        let matches = doSearchKeyword(word);
+        if (matches.length > 0) {
+          if (!maxlengths[len]) maxlengths[len] = 0;
+          maxlengths[len]++;
+          if (maxlengths[len] <= limitPerLength) {
+            hits.push(word);
+          }
+        }
+      }
+    });
+    setWordListResults(hits);
+    setWordListResultsAll(hits); // copy for filtering
+    setWordListResultsLengths(lengthsFromResults(hits));
+  };
+
+  const selectWordListResultValue = (event) => {
+    let index = event.target.value;
+    setSelectedWordListResult(index);
+    let matches = doSearchKeyword(wordListResults[index]);
+    doSearchUpdate(matches);    
+  }
+
+  const randomWordListResult = () => {
+    let index = Math.floor(Math.random() * wordListResults.length);
+    setSelectedWordListResult(index);
+    let matches = doSearchKeyword(wordListResults[index]);
+    doSearchUpdate(matches);    
+  }
+
+  const valueForHighlight = (colIndex) => {
+    for (let row=0; row<gridHighlight.length; row++) {
+      if (gridHighlight[row][colIndex]) return grid[row][colIndex];
+    }
+    return '';
+  }
+
 
   function updateGrid(plaintext, k, n, start, highlights) {
     // let gh = createGridHighlight(plaintext, k, n, start);
     let gh = createGridHighlight(plaintext, k, n, start);
-    console.log(gh);
     if (highlights) {
       highlights.map((h, index) => {
-        console.log(h);
         gh[h[0]][h[1]+1] = 1;
       });
     }
@@ -64,7 +165,9 @@ function App() {
     setK(k);
     setN(n);
     setStart(start);
-    setGrid(createGrid(plaintext, k, n, start));
+    let gtmp = createGrid(plaintext, k, n, start);
+    setGrid(gtmp);
+    setColumns(columnsFrom(gtmp));
   }
 
   function selectKaczynski1() {
@@ -91,6 +194,58 @@ function App() {
   function selectTrees2() {
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40, [[1,0],[2,1],[1,2],[0,3],[0,5],[1,6],[2,7],[2,9],[4,10],[5,10],[2,11],[2,12],[1,13],[4,14],[1,17],[2,18]]);
   }
+  function incrementStart() {
+    updateGrid(plaintext, k, n, start+k);
+  }
+  function decrementStart() {
+    updateGrid(plaintext, k, n, start-k);
+  }
+  function incrementK() {
+    updateGrid(plaintext, k+1, n, start);
+  }
+  function decrementK() {
+    updateGrid(plaintext, k-1, n, start);
+  }
+  function incrementN() {
+    updateGrid(plaintext, k, n+1, start);
+  }
+  function decrementN() {
+    updateGrid(plaintext, k, n-1, start);
+  }
+  function selectSearchResult(index) {
+    updateGrid(plaintext, k, n, start, searchResults[index]);
+  }
+  function selectWordListLengthFilter(event) {
+    let selected = event.target.value;
+    console.log(selected);
+    if (selected == '') {
+      setWordListResults(wordListResultsAll);
+      return;
+    }
+    setWordListLengthFilter(selected);
+    let wordListResultsNew = [];
+    wordListResultsAll.map((word,index) => {if (word.length == selected) wordListResultsNew.push(word);});
+    setWordListResults(wordListResultsNew);
+  }
+
+  function lengthsFromResults(results) {
+    let lengths = new Set();
+    results.map((word, index) => {
+      lengths.add(word.length);
+    });
+    return Array.from(lengths).sort((a,b)=>b-a);
+  }
+
+  function lengthsSelector() {
+    return (
+    <select value={wordListLengthFilter} onChange={selectWordListLengthFilter}>
+      <option></option>
+      {wordListResultsLengths.map((len, index) => (
+        <option key={index} value={len}>{len}</option>
+      ))}
+    </select>
+    );
+  }
 
   function cl(row, col, highlight) {
     let shift = (n-1-row)*k + start;
@@ -101,79 +256,130 @@ function App() {
       else c += " highlight2"
     return c;
   }
+  function clEnd(colIndex) {
+    let val = valueForHighlight(colIndex);
+    if (val == '') return 'col_end';
+    return 'col_end_highlight';
+  }
    
   return (
     <>
       <center>
-        <form onSubmit={handleSubmit}>
-          <table>
-            <tbody>
-              <tr>
-                <td>
-                  Kaczynski <a href="#" onClick={selectKaczynski1}>[1]</a>
-                  <a href="#" onClick={selectKaczynski2}>[2]</a>
-                  <a href="#" onClick={selectKaczynski3}>[3]</a>
-                  <a href="#" onClick={selectKaczynski4}>[4]</a><br></br>
-                  TheodoreKaczynski <a href="#" onClick={selectTheodoreKaczynski1}>[1]</a>
-                  <a href="#" onClick={selectTheodoreKaczynski2}>[2]</a><br></br>
-                  Trees <a href="#" onClick={selectTrees1}>[1]</a>
-                  <a href="#" onClick={selectTrees2}>[2]</a>
-                </td>
-                <td>
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                Kaczynski <a href="#" onClick={selectKaczynski1}>[1]</a>
+                <a href="#" onClick={selectKaczynski2}>[2]</a>
+                <a href="#" onClick={selectKaczynski3}>[3]</a>
+                <a href="#" onClick={selectKaczynski4}>[4]</a><br></br>
+                TheodoreKaczynski <a href="#" onClick={selectTheodoreKaczynski1}>[1]</a>
+                <a href="#" onClick={selectTheodoreKaczynski2}>[2]</a><br></br>
+                Trees <a href="#" onClick={selectTrees1}>[1]</a>
+                <a href="#" onClick={selectTrees2}>[2]</a>
+              </td>
+              <td>
                 <table>
-            <tbody>
-              <tr>
-                <td className="l"><label>Plaintext</label></td>
-                <td>
-                  <input
-                    type="text"
-                    size="64"
-                    value={plaintext}
-                    onChange={plaintextChange}
-                  />
-                </td>
-              </tr>              
-              <tr>
-                <td className="l"><label>Increment</label></td>                
-                <td>
-                  <input
-                    type="text"
-                    size="6"
-                    value={k}
-                    onChange={kChange}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="l"><label>Rows</label></td>                
-                <td>
-                  <input
-                    type="text"
-                    size="6"
-                    value={n}
-                    onChange={nChange}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="l"><label>Starting Shift</label></td>                
-                <td>
-                  <input
-                    type="text"
-                    size="6"
-                    value={start}
-                    onChange={startChange}
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </form>
-          {/* <button type="submit">Submit</button> */}
+                  <tbody>
+                    <tr>
+                      <td className="l"><label>Plaintext</label></td>
+                      <td>
+                        <input
+                          type="text"
+                          size="30"
+                          value={plaintext}
+                          onChange={plaintextChange}
+                        />
+                      </td>
+                    </tr>              
+                    <tr>
+                      <td className="l"><label>Increment</label></td>                
+                      <td>
+                        <input
+                          type="text"
+                          size="6"
+                          value={k}
+                          onChange={kChange}
+                        />
+                        &nbsp;<a className="nou" href="#" style={{textDecoration: 'none'}} onClick={incrementK}>+</a> <a className="nou" href="#" style={{textDecoration: 'none'}} onClick={decrementK}>-</a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="l"><label>Rows</label></td>                
+                      <td>
+                        <input
+                          type="text"
+                          size="6"
+                          value={n}
+                          onChange={nChange}
+                        />
+                        &nbsp;<a className="nou" href="#" style={{textDecoration: 'none'}} onClick={incrementN}>+</a> <a className="nou" href="#" style={{textDecoration: 'none'}} onClick={decrementN}>-</a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="l"><label>Starting Shift</label></td>                
+                      <td>
+                        <input
+                          type="text"
+                          size="6"
+                          value={start}
+                          onChange={startChange}
+                        />
+                        &nbsp;<a className="nou" href="#" style={{textDecoration: 'none'}} onClick={incrementStart}>+</a> <a className="nou" href="#" style={{textDecoration: 'none'}} onClick={decrementStart}>-</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+              <td>
+                <table>
+                    <tbody>
+                      <tr>
+                        <td className="l"><label>Search for</label></td>
+                        <td>
+                          <input
+                            type="keyword"
+                            size="20"
+                            value={keyword}
+                            onChange={updateKeyword}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td></td>
+                        <td><button onClick={doSearch}>Search</button><button onClick={doClear}>Clear</button>
+                          <div>{searchResult}</div>                        
+                          <div>
+                          {searchResults.map((result, index) => (
+                            <span key={index}>[<a href="#" className="nou" onClick={() => selectSearchResult(index)}>{index+1}</a>]</span>
+                          ))}
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+              </td>
+              <td>
+                <button onClick={() => doFindWords(100, 4)}>Find words</button>
+                {wordListResults.length > 0 && 
+                  <>
+                    <br></br>
+                    <select value={selectedWordListResult} onChange={selectWordListResultValue}>
+                      <option/>
+                      {wordListResults.map((word, index) => (
+                        <option key={index} value={index}>{word}</option>
+                      ))}
+                    </select><br></br>
+                    <button onClick={randomWordListResult}>Random</button>
+                    <br></br>
+                    <LengthSelector wordListResultsLengths={wordListResultsLengths} onChange={selectWordListLengthFilter}/>
+                    {/* {lengthsSelector()} */}
+                  </>
+                }
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <table>
           <tbody>
             <tr>
@@ -186,6 +392,11 @@ function App() {
                       ))}
                     </div>
                   ))}
+                    <div className="row_end">
+                      {grid[0].map((col, colIndex) => (
+                        <div className={clEnd(colIndex)} key={colIndex}>{valueForHighlight(colIndex)}</div>
+                      ))}
+                    </div>
                 </div>
               </td>
             </tr>
@@ -242,4 +453,39 @@ function caesarShift(ch, num) {
   return String.fromCharCode(val + 65);
 }
 
+function columnsFrom(theGrid) {
+  let arr = [];
+  for (let col=1; col<theGrid[0].length; col++) {
+    let str = "";
+    for (let row=0; row<theGrid.length; row++) {
+      str += theGrid[row][col];
+    }
+    arr.push(str);
+  }
+  return arr;
+}
+
+// Function to parse the text content and extract word-frequency pairs
+function parseTextContent(content) {
+  // Split the content into lines
+  const lines = content.trim().split('\n');
+
+  // Initialize an empty array to store word-frequency pairs
+  const wordFreqPairs = [];
+
+  // Iterate through each line
+  lines.forEach(line => {
+      // Split each line by whitespace
+      const parts = line.trim().split(/\s+/);
+
+      // Extract the word and frequency
+      const word = parts[0];
+      const frequency = parseInt(parts[1]);
+
+      // Push the word-frequency pair to the array
+      wordFreqPairs.push([ word, frequency ]);
+  });
+
+  return wordFreqPairs;
+}
 export default App;
