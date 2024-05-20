@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import FindWords from './FindWords.js';
 import LengthSelector from './LengthSelector.js';
+// import ServerMessage from './ServerMessage.js';
 import './App.css';
 
 function App() {
@@ -318,6 +319,7 @@ function App() {
             </tr>
           </tbody>
         </table>
+        {/* <ServerMessage/> */}
       </center>
     </>
   );

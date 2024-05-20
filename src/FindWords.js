@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
 import LengthSelector from './LengthSelector';
-import words from './words.js';
+import axios from 'axios';
+import './FindWords.css';
+
+const URL_PREFIX = "http://localhost:8888";
 
 function FindWords({doSearchKeyword, doSearchUpdate}) {
   // word list
@@ -11,16 +14,26 @@ function FindWords({doSearchKeyword, doSearchUpdate}) {
   const [wordListResultsLengths, setWordListResultsLengths] = useState([]);
   const [selectedWordListResult, setSelectedWordListResult] = useState(-1);  
   const [wordListLengthFilter, setWordListLengthFilter] = useState(0);  
+  const [buttonMessage, setButtonMessage] = useState('');
 
   const doFindWords = (limitPerLength, minLength) => {
-    let wordFreqPairs = wordList;
-    if (wordFreqPairs.length == 0) {
-      wordFreqPairs = parseTextContent(words);
-      setWordList(wordFreqPairs);
-    }
+    if (wordList.length == 0) {
+      setButtonMessage("Fetching words...");
+      axios.get(URL_PREFIX + '/api/words')
+      .then(response => {
+        setWordList(response.data);
+        doFindWordsSub(limitPerLength, minLength, response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+    } else doFindWordsSub(limitPerLength, minLength, wordList);
+  };
+
+  const doFindWordsSub = (limitPerLength, minLength, wordList) => {
     let hits = [];
     let maxlengths = [];
-    wordFreqPairs.map((pair, index) => {
+    wordList.map((pair, index) => {
       let [word, freq] = pair;
       let len = word.length;
       if (len >= minLength) {
@@ -37,7 +50,9 @@ function FindWords({doSearchKeyword, doSearchUpdate}) {
     setWordListResults(hits);
     setWordListResultsAll(hits); // copy for filtering
     setWordListResultsLengths(lengthsFromResults(hits));
+    setButtonMessage(hits.length + " words found.");
   };
+
   const selectWordListResultValue = (event) => {
     let index = event.target.value;
     setSelectedWordListResult(index);
@@ -54,7 +69,6 @@ function FindWords({doSearchKeyword, doSearchUpdate}) {
   
   function selectWordListLengthFilter(event) {
     let selected = event.target.value;
-    console.log(selected);
     if (selected == '') {
       setWordListResults(wordListResultsAll);
       return;
@@ -64,10 +78,10 @@ function FindWords({doSearchKeyword, doSearchUpdate}) {
     wordListResultsAll.map((word,index) => {if (word.length == selected) wordListResultsNew.push(word);});
     setWordListResults(wordListResultsNew);
   }  
-  
+
   return (
     <>
-      <button onClick={() => doFindWords(100, 4)}>Find words</button>
+      <button onClick={() => doFindWords(100, 4)}>Find words</button><span className="button-message">{buttonMessage}</span>
       {wordListResults.length > 0 && 
         <>
           <br></br>
