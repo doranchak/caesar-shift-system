@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import FindWords from './FindWords.js';
 import LengthSelector from './LengthSelector.js';
-// import ServerMessage from './ServerMessage.js';
+import Experiment5 from './Experiment5.js';
+import {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift} from './GridSearch.js';
 import './App.css';
 
 function App() {
@@ -14,13 +15,14 @@ function App() {
   // start
   const [start, setStart] = useState(-40);
   // grid
-  let gh = createGridHighlight(plaintext, k, n, start);
+  // let gh = createGridHighlight(plaintext, k, n, start);
   // gh[1][13] = 1;
   // gh[3][2] = 1;
   // gh[5][9] = 1;
-  const [gridHighlight, setGridHighlight] = useState(gh);  
   let gtmp = createGrid(plaintext, k, n, start);
   const [grid, setGrid] = useState(gtmp);
+  const [gridHighlight, setGridHighlight] = useState(createGridHighlightWithGrid(gtmp));  
+  const [gridHighlightOverride, setGridHighlightOverride] = useState([]);
   // string versions of grid columns for more convenient searching
   const [columns, setColumns] = useState(columnsFrom(gtmp));
   // search keyword
@@ -29,57 +31,41 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchResult, setSearchResult] = useState(null);
 
+  const [irregular, setIrregular] = useState(false);
+  const [irregularShifts, setIrregularShifts] = useState([]);
+
   const plaintextChange = (event) => {
-    let val = event.target.value.toUpperCase();
+    let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
     setPlaintext(val);
-    setGrid(createGrid(val, k, n, start));
+    updateGrid(val, k, n, start);
   };
   const kChange = (event) => {
     let val = parseInt(event.target.value);
     if (isNaN(val)) return;
     setK(val);
-    setGrid(createGrid(plaintext, val, n, start));
+    updateGrid(plaintext, val, n, start);
   };
   const nChange = (event) => {
     let val = Math.min(20, Math.max(1, event.target.value));
     if (isNaN(val)) return;
     setN(val);
-    setGrid(createGrid(plaintext, k, val, start));
+    updateGrid(plaintext, k, val, start);
   };
   const startChange = (event) => {
     let val = parseInt(event.target.value);
     if (isNaN(val)) return;
     setStart(val);
-    setGrid(createGrid(plaintext, k, n, val));
+    updateGrid(plaintext, k, n, val);
   };
   const updateKeyword = (event) => {
-    let val = event.target.value.toUpperCase();
+    let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
     setKeyword(val);
   };
   const doSearch = () => {
-    let matches = doSearchKeyword(keyword);
+    let matches = doSearchKeyword(keyword, columns);
     doSearchUpdate(matches);
   };
 
-  const doSearchKeyword = (word) => {
-    let matches = [];
-    for (let startcol = 0; startcol < columns.length - word.length + 1; startcol++) {
-      let match = [];
-      for (let i=0; i<word.length; i++) {
-        let col = startcol+i;
-        let ind = columns[col].indexOf(word[i]);
-        if (ind == -1) {
-          match = [];
-          break;
-        }
-        match.push([ind, col]);
-      }
-      if (match.length > 0) {
-        matches.push(match);
-      }
-    }
-    return matches;
-  }
   const doSearchUpdate = (matches) => {
     if (matches.length == 0) {
       setSearchResult("No results.");
@@ -98,53 +84,112 @@ function App() {
 
   const valueForHighlight = (colIndex) => {
     for (let row=0; row<gridHighlight.length; row++) {
-      if (gridHighlight[row][colIndex]) return grid[row][colIndex];
+      if (gridHighlight[row][colIndex]) {
+        if (gridHighlightOverride[colIndex]) return gridHighlightOverride[colIndex];
+        else return grid[row][colIndex];
+      }
     }
     return '';
   }
 
+  function updateGridPlaintext(plaintext) {
+    updateGrid(plaintext, k, n, start);
+  }
 
   function updateGrid(plaintext, k, n, start, highlights) {
     // let gh = createGridHighlight(plaintext, k, n, start);
-    let gh = createGridHighlight(plaintext, k, n, start);
+    // if (highlights) {
+    //   highlights.map((h, index) => {
+    //     gh[h[0]][h[1]+1] = 1;
+    //   });
+    // }
+    // setGridHighlight(gh);
+    if (irregular) {
+      let grid = createGridStatic(plaintext, irregularShifts);
+      setStart(0);
+      updateGridWithGrid(grid, highlights);
+      return;
+    } 
+
+    setPlaintext(plaintext);
+    setK(k);
+    setN(n);
+    setStart(start);
+    let gtmp = createGrid(plaintext, k, n, start);
+    updateGridWithGrid(gtmp, highlights);
+    // setGrid(gtmp);
+    // let cols = columnsFrom(gtmp);
+    // setColumns(cols);
+  }
+
+  function updateGridWithGrid(grid, highlights) {
+    setGrid(grid);
+    let gh = createGridHighlightWithGrid(grid);
     if (highlights) {
       highlights.map((h, index) => {
         gh[h[0]][h[1]+1] = 1;
       });
     }
     setGridHighlight(gh);
-    setPlaintext(plaintext);
-    setK(k);
-    setN(n);
-    setStart(start);
-    let gtmp = createGrid(plaintext, k, n, start);
-    setGrid(gtmp);
-    setColumns(columnsFrom(gtmp));
+
+    let cols = columnsFrom(grid);
+    setColumns(cols);
   }
 
   function selectKaczynski1() {
     updateGrid("KACZYNSKI", 10, 7, -30);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski2() {
     updateGrid("KACZYNSKI", 10, 7, -30, [[6,0],[1,1],[5,2],[0,3],[2,4],[3,5],[4,6]]);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski3() {
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[4,7],[1,8]]);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski4() {
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[2,7],[2,8]]);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectTheodoreKaczynski1() {
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectTheodoreKaczynski2() {
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30, [[4,1],[4,2],[6,3],[0,4],[6,5],[5,6],[4,8],[5,12],[6,13],[6,14],[6,15],[6,16],[3,17]]);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectTrees1() {
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40);
+    setIrregular(false); setIrregularShifts([]);
   }
   function selectTrees2() {
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40, [[1,0],[2,1],[1,2],[0,3],[0,5],[1,6],[2,7],[2,9],[4,10],[5,10],[2,11],[2,12],[1,13],[4,14],[1,17],[2,18]]);
+    setIrregular(false); setIrregularShifts([]);
+  }
+  function selectDatesGrid() {
+    let sh = [20, 12, 7, 4, 0, -4, -7, -12, -20];
+    setIrregular(true);
+    setIrregularShifts(sh);
+    let grid = createGridStatic(plaintext, sh);
+    setStart(0);
+    setGrid(grid);
+
+    const gridHighlight = [];
+    let rows = grid.length;
+    let cols = plaintext.length + 1;  
+    for (let i = 0; i<rows; i++) {
+      const row = [];
+      for (let j = 0; j <= cols; j++) {
+        row.push(0);
+      }
+      gridHighlight.push(row);
+    }
+    setGridHighlight(gridHighlight);
+
+    let columns = columnsFrom(grid);
+    setColumns(columns);    
   }
   function incrementStart() {
     updateGrid(plaintext, k, n, start+k);
@@ -180,12 +225,14 @@ function App() {
   // }
 
   function cl(row, col, highlight) {
-    let shift = (n-1-row)*k + start;
+    let shift = irregular ? irregularShifts[row] : (n-1-row)*k + start;
     let c = "col";
     if (shift == 0) c += " plaintext";
-    if (highlight) 
+    if (highlight) {
       if (shift == 0) c += " highlight1";
       else c += " highlight2"
+
+    }
     return c;
   }
   function clEnd(colIndex) {
@@ -208,7 +255,8 @@ function App() {
                 TheodoreKaczynski <a href="#" onClick={selectTheodoreKaczynski1}>[1]</a>
                 <a href="#" onClick={selectTheodoreKaczynski2}>[2]</a><br></br>
                 Trees <a href="#" onClick={selectTrees1}>[1]</a>
-                <a href="#" onClick={selectTrees2}>[2]</a>
+                <a href="#" onClick={selectTrees2}>[2]</a><br></br>
+                Dates Grid<a href="#" onClick={selectDatesGrid}>[1]</a>
               </td>
               <td>
                 <table>
@@ -292,7 +340,7 @@ function App() {
                   </table>
               </td>
               <td>
-                <FindWords doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate}/>
+                <FindWords columns={columns} doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate} createGrid={createGrid} columnsFrom={columnsFrom} setGridHighlight={setGridHighlight} setGridHighlightOverride={setGridHighlightOverride} k={k} n={n} start={start} keyword={keyword}/>
               </td>
             </tr>
           </tbody>
@@ -319,7 +367,6 @@ function App() {
             </tr>
           </tbody>
         </table>
-        {/* <ServerMessage/> */}
       </center>
     </>
   );
@@ -330,31 +377,24 @@ function App() {
 function style(row, col, val) {
 }
 
-function createGrid(plaintext, k, n, start) {
-  const grid = [];
-  let rows = n;
-  let cols = plaintext.length + 1;  
-  for (let i = rows-1; i >= 0; i--) {
-    const row = [];
-    for (let j = 0; j < cols; j++) {
-      let shift = start + k*i;
-      if (j == 0) {
-        let prefix = "";
-        if (shift > 0) prefix = "+";
-        row.push(prefix + shift); // shift value
-      }
-      else row.push(caesarShift(plaintext[j-1], shift)); 
-    }
-    grid.push(row);
-  }
-  return grid;
-}
-
-function createGridHighlight(plaintext, k, n, start) {
+// function createGridHighlight(plaintext, k, n, start) {
+//   const gridHighlight = [];
+//   let rows = n;
+//   let cols = plaintext.length + 1;  
+//   for (let i = rows-1; i >= 0; i--) {
+//     const row = [];
+//     for (let j = 0; j <= cols; j++) {
+//       row.push(0);
+//     }
+//     gridHighlight.push(row);
+//   }
+//   return gridHighlight;
+// }
+function createGridHighlightWithGrid(grid) {
   const gridHighlight = [];
-  let rows = n;
-  let cols = plaintext.length + 1;  
-  for (let i = rows-1; i >= 0; i--) {
+  let rows = grid.length;
+  let cols = grid[0].length + 1;  
+  for (let i = 0; i<rows; i++) {
     const row = [];
     for (let j = 0; j <= cols; j++) {
       row.push(0);
@@ -362,25 +402,6 @@ function createGridHighlight(plaintext, k, n, start) {
     gridHighlight.push(row);
   }
   return gridHighlight;
-}
-
-function caesarShift(ch, num) {
-  let val = ch.charCodeAt(0) - 65 + num;
-  while (val < 0) val += 26;
-  val %= 26;
-  return String.fromCharCode(val + 65);
-}
-
-function columnsFrom(theGrid) {
-  let arr = [];
-  for (let col=1; col<theGrid[0].length; col++) {
-    let str = "";
-    for (let row=0; row<theGrid.length; row++) {
-      str += theGrid[row][col];
-    }
-    arr.push(str);
-  }
-  return arr;
 }
 
 export default App;
