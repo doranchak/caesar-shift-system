@@ -1,5 +1,5 @@
-const MAX_SKIPPED_COLUMNS = 4;
-const MAX_SAME_COLUMN = 3;
+const MAX_SKIPPED_COLUMNS = 10;
+const MAX_SAME_COLUMN = 10;
 const MAX_SKIPPED_LETTERS = 1;
 
 const doSearchKeyword = (word, columns) => {
@@ -25,7 +25,7 @@ const doSearchKeyword = (word, columns) => {
 // TODO: bug: JARLVANEYCKE 
 
 // returns true once a match is found
-const doSearchKeywordFuzzy = (state, noskip) => {
+const doSearchKeywordFuzzy = (state, maxskip) => {
   let rows = state.columns[0].length;
   let cols = state.columns.length;
   if (!('visited' in state)) {
@@ -50,7 +50,7 @@ const doSearchKeywordFuzzy = (state, noskip) => {
   // check termination conditions
   if (state.penaltySkippedColumns > MAX_SKIPPED_COLUMNS) return false;
   if (state.penaltySameColumn > MAX_SAME_COLUMN) return false;
-  if (state.penaltySkippedLetters > MAX_SKIPPED_LETTERS || (noskip && state.penaltySkippedLetters > 0)) return false;
+  if (state.penaltySkippedLetters > maxskip) return false;
   
   if (state.currentMatch == state.keyword || state.currentMatch.length == state.keyword.length - state.penaltySkippedLetters) {
     // console.log("SUCCESS! ", state);
@@ -72,7 +72,7 @@ const doSearchKeywordFuzzy = (state, noskip) => {
       state.visited[row][state.currentColumn] = 1;
       state.currentColumn++;
       state.currentLetter++;
-      if (doSearchKeywordFuzzy(state, noskip)) {
+      if (doSearchKeywordFuzzy(state, maxskip)) {
         return true;
       }
       undoStep(state, row);
@@ -84,7 +84,7 @@ const doSearchKeywordFuzzy = (state, noskip) => {
     state.penaltySkippedColumns++;
     state.currentColumn++;
     // console.log("skipping a column");
-    if (doSearchKeywordFuzzy(state, noskip)) {
+    if (doSearchKeywordFuzzy(state, maxskip)) {
       return true;
     }
     state.penaltySkippedColumns--;
@@ -107,7 +107,7 @@ const doSearchKeywordFuzzy = (state, noskip) => {
         state.currentColumn++;
         state.currentLetter++;
         state.penaltySameColumn++;
-        if (doSearchKeywordFuzzy(state, noskip)) {
+        if (doSearchKeywordFuzzy(state, maxskip)) {
           return true;
         }
         undoStep(state, row);
@@ -121,7 +121,7 @@ const doSearchKeywordFuzzy = (state, noskip) => {
   // if (state.currentMatch == "THEODOREKAC") console.log("gonna skip letter", state.keyword[state.currentLetter], "match", state.currentMatch, "current col", state.currentColumn);
   state.penaltySkippedLetters++;
   state.currentLetter++;
-  if (doSearchKeywordFuzzy(state, noskip)) {
+  if (doSearchKeywordFuzzy(state, maxskip)) {
     return true;
   }
   state.penaltySkippedLetters--;
@@ -197,4 +197,4 @@ function caesarShift(ch, num) {
   return String.fromCharCode(val + 65);
 }
 
-export {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift};
+export {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift, MAX_SKIPPED_LETTERS};

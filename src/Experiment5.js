@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import axios from 'axios';
-import {createGrid, columnsFrom, doSearchKeyword, doSearchKeywordFuzzy} from './GridSearch.js';
+import {createGrid, columnsFrom, doSearchKeyword, doSearchKeywordFuzzy, MAX_SKIPPED_LETTERS} from './GridSearch.js';
 const URL_PREFIX = "http://localhost:8888";
 // const MIN_LENGTH = 1;
 const MIN_SEARCH_LENGTH = 9;
@@ -448,38 +448,47 @@ function search(columns, keyword, doSearchKeywordFuzzy, setGridHighlight, setGri
   let result = null;
   let best_gh = [];
   let best_gho = [];
-  for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
-    let [gh, gho] = make_gh(columns);
-    let current_result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, true);
-    if (current_result) {
-      if (!result) {
-        result = current_result;
-        best_gh = gh;
-        best_gho = gho;
-      } else {
-        // keep only if current result is better
-        if (current_result.penaltySkippedLetters > result.penaltySkippedLetters) continue;
-        if (current_result.penaltySkippedColumns < result.penaltySkippedColumns) {
+
+  for (let maxskip=0; maxskip<=MAX_SKIPPED_LETTERS; maxskip++) {
+    for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
+      let [gh, gho] = make_gh(columns);
+      let current_result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, maxskip);
+      if (current_result) {
+        console.log(" - intermediate result", keyword.length, keyword, current_result.penaltySkippedColumns, current_result.penaltySameColumn, current_result.penaltySkippedLetters);        
+        if (!result) {
           result = current_result;
           best_gh = gh;
           best_gho = gho;
+        } else {
+          // keep only if current result is better
+          if (current_result.penaltySkippedLetters > result.penaltySkippedLetters) {
+            
+          } else if (score(current_result) < score(result)) {
+            result = current_result;
+            best_gh = gh;
+            best_gho = gho;
+          }
         }
       }
     }
+    // if (!result) {
+    //   for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
+    //     result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, false);
+    //     if (result) break;
+    //   }    
+    // }
+    if (doPrint && result) console.log(keyword.length, keyword, result.penaltySkippedColumns, result.penaltySameColumn, result.penaltySkippedLetters);
+    if (doHighlight) {
+      setGridHighlight(best_gh);
+      setGridHighlightOverride(best_gho);
+    }
+    if (result) return result; // exit early if we have a result.  otherwise, continue if we allow greater numbers of letter skips.
   }
-  // if (!result) {
-  //   for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
-  //     result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, false);
-  //     if (result) break;
-  //   }    
-  // }
-  if (doPrint && result) console.log(keyword.length, keyword, result.penaltySkippedColumns, result.penaltySameColumn, result.penaltySkippedLetters);
-  if (doHighlight) {
-    setGridHighlight(best_gh);
-    setGridHighlightOverride(best_gho);
-  }
-  return result;
-  // console.log(gho);
+  // if we got this far, no result.
+  console.log("NO RESULT");
+}
+function score(result) {
+  return result.penaltySkippedColumns + result.penaltySameColumn;
 }
 function searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, noskip) {
   let state = {keyword, columns, currentColumn};

@@ -224,10 +224,14 @@ function App() {
   //   );
   // }
 
-  function cl(row, col, highlight) {
+  function cl(row, col) {
     let shift = irregular ? irregularShifts[row] : (n-1-row)*k + start;
     let c = "col";
     if (shift == 0) c += " plaintext";
+
+    let highlight = 0;
+    if (gridHighlight && gridHighlight.length >= (row+1) && gridHighlight[row].length >= (col+1))
+      highlight = gridHighlight[row][col];
     if (highlight) {
       if (shift == 0) c += " highlight1";
       else c += " highlight2"
@@ -353,7 +357,7 @@ function App() {
                   {grid.map((row, rowIndex) => (
                     <div className="row" key={rowIndex}>
                       {row.map((col, colIndex) => (
-                        <div style={style(rowIndex, colIndex, 0)} className={cl(rowIndex, colIndex, gridHighlight[rowIndex][colIndex])} key={`${rowIndex}-${colIndex}`}>{grid[rowIndex][colIndex]}</div>
+                        <div style={style(rowIndex, colIndex, 0)} className={cl(rowIndex, colIndex)} key={`${rowIndex}-${colIndex}`}>{grid[rowIndex][colIndex]}</div>
                       ))}
                     </div>
                   ))}
