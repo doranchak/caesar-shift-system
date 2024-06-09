@@ -62,6 +62,7 @@ function App() {
     setKeyword(val);
   };
   const doSearch = () => {
+    init();
     let matches = doSearchKeyword(keyword, columns);
     doSearchUpdate(matches);
   };
@@ -92,6 +93,11 @@ function App() {
     return '';
   }
 
+  // reset grid stuff to avoid side effects
+  function init() {
+    setIrregular(false); setIrregularShifts([]);
+    setGridHighlightOverride([]);
+  }
   function updateGridPlaintext(plaintext) {
     updateGrid(plaintext, k, n, start);
   }
@@ -137,38 +143,39 @@ function App() {
   }
 
   function selectKaczynski1() {
+    init();
     updateGrid("KACZYNSKI", 10, 7, -30);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski2() {
+    init();
     updateGrid("KACZYNSKI", 10, 7, -30, [[6,0],[1,1],[5,2],[0,3],[2,4],[3,5],[4,6]]);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski3() {
+    init();
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[4,7],[1,8]]);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectKaczynski4() {
+    init();
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[2,7],[2,8]]);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectTheodoreKaczynski1() {
+    init();
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectTheodoreKaczynski2() {
+    init();
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30, [[4,1],[4,2],[6,3],[0,4],[6,5],[5,6],[4,8],[5,12],[6,13],[6,14],[6,15],[6,16],[3,17]]);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectTrees1() {
+    init();
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectTrees2() {
+    init();
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40, [[1,0],[2,1],[1,2],[0,3],[0,5],[1,6],[2,7],[2,9],[4,10],[5,10],[2,11],[2,12],[1,13],[4,14],[1,17],[2,18]]);
-    setIrregular(false); setIrregularShifts([]);
   }
   function selectDatesGrid() {
+    init();
     let sh = [20, 12, 7, 4, 0, -4, -7, -12, -20];
     setIrregular(true);
     setIrregularShifts(sh);
@@ -192,37 +199,33 @@ function App() {
     setColumns(columns);    
   }
   function incrementStart() {
+    init();
     updateGrid(plaintext, k, n, start+k);
   }
   function decrementStart() {
+    init();
     updateGrid(plaintext, k, n, start-k);
   }
   function incrementK() {
+    init();
     updateGrid(plaintext, k+1, n, start);
   }
   function decrementK() {
+    init();
     updateGrid(plaintext, k-1, n, start);
   }
   function incrementN() {
+    init();
     updateGrid(plaintext, k, n+1, start);
   }
   function decrementN() {
+    init();
     updateGrid(plaintext, k, n-1, start);
   }
   function selectSearchResult(index) {
+    init();
     updateGrid(plaintext, k, n, start, searchResults[index]);
   }
-
-  // function lengthsSelector() {
-  //   return (
-  //   <select value={wordListLengthFilter} onChange={selectWordListLengthFilter}>
-  //     <option></option>
-  //     {wordListResultsLengths.map((len, index) => (
-  //       <option key={index} value={len}>{len}</option>
-  //     ))}
-  //   </select>
-  //   );
-  // }
 
   function cl(row, col) {
     let shift = irregular ? irregularShifts[row] : (n-1-row)*k + start;
