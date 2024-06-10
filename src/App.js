@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import FindWords from './FindWords.js';
-import LengthSelector from './LengthSelector.js';
-import Experiment5 from './Experiment5.js';
+import AnimateAllWords from './AnimateAllWords.js';
+import AnimatePaint from './AnimatePaint.js';
 import {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift} from './GridSearch.js';
 import './App.css';
 
@@ -33,6 +33,8 @@ function App() {
 
   const [irregular, setIrregular] = useState(false);
   const [irregularShifts, setIrregularShifts] = useState([]);
+
+  const [wordVizCounter, setWordVizCounter] = useState("");
 
   const plaintextChange = (event) => {
     let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -240,6 +242,7 @@ function App() {
       else c += " highlight2"
 
     }
+    if (col > 0) c += " letter_" + columns[col-1][row];
     return c;
   }
   function clEnd(colIndex) {
@@ -247,7 +250,15 @@ function App() {
     if (val == '') return 'col_end';
     return 'col_end_highlight';
   }
-   
+  function lettersFromColumns() {
+    let letters = "";
+    columns.map((item, idx) => {
+      for (let i=0; i<item.length; i++)
+        if (letters.indexOf(item[i]) == -1)
+          letters += item[i];
+    });
+    return letters;
+  }
   return (
     <>
       <center>
@@ -341,6 +352,8 @@ function App() {
                             <span key={index}>[<a href="#" className="nou" onClick={() => selectSearchResult(index)}>{index+1}</a>]</span>
                           ))}
                           </div>
+                          <AnimateAllWords rows={columns[0].length} cols={columns.length} wordLength={5} setGridHighlight={setGridHighlight} setWordVizCounter={setWordVizCounter}></AnimateAllWords>
+                          <AnimatePaint styleSheet={document.styleSheets[2]} letters={lettersFromColumns()}></AnimatePaint>
                         </td>
                       </tr>
                     </tbody>
@@ -369,6 +382,11 @@ function App() {
                         <div className={clEnd(colIndex)} key={colIndex}>{valueForHighlight(colIndex)}</div>
                       ))}
                     </div>
+                    {wordVizCounter && 
+                      <div className="counter">
+                        {wordVizCounter}
+                      </div>
+                    }
                 </div>
               </td>
             </tr>
@@ -384,19 +402,6 @@ function App() {
 function style(row, col, val) {
 }
 
-// function createGridHighlight(plaintext, k, n, start) {
-//   const gridHighlight = [];
-//   let rows = n;
-//   let cols = plaintext.length + 1;  
-//   for (let i = rows-1; i >= 0; i--) {
-//     const row = [];
-//     for (let j = 0; j <= cols; j++) {
-//       row.push(0);
-//     }
-//     gridHighlight.push(row);
-//   }
-//   return gridHighlight;
-// }
 function createGridHighlightWithGrid(grid) {
   const gridHighlight = [];
   let rows = grid.length;

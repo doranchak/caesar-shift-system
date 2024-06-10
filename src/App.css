@@ -79,3 +79,7 @@
 .l {text-align: right; font-weight: bold;}
 .l:after {content: ": "}
 
+.counter {
+  color: black;
+  margin-top: 1em;
+}
