@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 let MS = 100;
-function AnimateAllWords({rows, cols, wordLength, setGridHighlight, setWordVizCounter}) {
+function AnimateAllWords({rows, cols, wordLength, setGridHighlights, setWordVizCounter}) {
   const gh = () => {
     const gridHighlight = [];
     for (let i = 0; i<rows; i++) {
@@ -20,28 +20,6 @@ function AnimateAllWords({rows, cols, wordLength, setGridHighlight, setWordVizCo
 
     doAnimateFrame(arr, 0);
     console.log(arr.length + " frames.");
-    // for (let i=100; i<200; i++)
-    //   console.log(arr[i].toString());
-    // arr[100].map((item, index) => {
-    //   gridHighlight[item[0]][item[1]+1] = 1;
-    // });
-    // setGridHighlight(gridHighlight);
-
-    // let state = {};
-    // state.gridHighlight = gridHighlight;
-    // state.counter = 0;
-    // console.log("Starting...");
-    // for (let colstart=0; colstart<cols-wordLength+1; colstart++) {
-    //   state.word = [];
-    //   state.pos = 0;
-    //   for (let col=colstart; col<colstart+wordLength; col++) state.word.push([0, col]);
-    //   doAnimateFrame(state);
-    // }
-    // console.log("Count:", state.counter);
-
-    // setTimeout(() => {
-    //   doAnimateFrame(state);
-    // }, MS);
   }
 
   const doAnimateFrame = (arr, pos) => {
@@ -50,7 +28,7 @@ function AnimateAllWords({rows, cols, wordLength, setGridHighlight, setWordVizCo
     arr[pos].map((item, index) => {
       gridHighlight[item[0]][item[1]+1] = 1;
     });
-    setGridHighlight(gridHighlight);
+    setGridHighlights([gridHighlight]);
     setWordVizCounter((pos+1) + " words.");
     if (MS > 0) MS -= 0.2;
     setTimeout(() => {

@@ -10,7 +10,7 @@ import Experiment5 from './Experiment5';
 
 const URL_PREFIX = "http://localhost:8888";
 
-function FindWords({columns, doSearchKeyword, doSearchUpdate, createGrid, columnsFrom, setGridHighlight, setGridHighlightOverride, k, n, start, keyword}) {
+function FindWords({columns, doSearchKeyword, doSearchUpdate, createGrid, columnsFrom, setGridHighlights, setGridHighlightsOverride, k, n, start, keyword}) {
   // word list
   const [wordList, setWordList] = useState([]);
   const [selectedDictionary, setSelectedDictionary] = useState(0);
@@ -150,7 +150,7 @@ function FindWords({columns, doSearchKeyword, doSearchUpdate, createGrid, column
       <p><Experiment2 columns={columns}/></p>
       <p><Experiment3 wordList={wordList} k={k} n={n} start={start}/></p>
       <p><Experiment4 wordList={wordList} k={k} n={n} start={start}/></p>
-      <p><Experiment5 wordList={wordList} k={k} n={n} start={start} keyword={keyword} columns={columns} setGridHighlight={setGridHighlight} setGridHighlightOverride={setGridHighlightOverride}/></p>
+      <p><Experiment5 wordList={wordList} k={k} n={n} start={start} keyword={keyword} columns={columns} setGridHighlights={setGridHighlights} setGridHighlightsOverride={setGridHighlightsOverride}/></p>
     </>
   );
 }

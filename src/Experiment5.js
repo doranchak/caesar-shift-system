@@ -6,9 +6,9 @@ const URL_PREFIX = "http://localhost:8888";
 const MIN_SEARCH_LENGTH = 9;
 const MAX_SEARCH_LENGTH = 16;
 const MIN_SEARCH_LENGTH_NAMES = 1;
-function Experiment5({keyword, columns, wordList, k, n, start, setGridHighlight, setGridHighlightOverride}) {  
+function Experiment5({keyword, columns, wordList, k, n, start, setGridHighlights, setGridHighlightsOverride}) {  
   const go = () => {
-    search(columns, keyword, doSearchKeywordFuzzy, setGridHighlight, setGridHighlightOverride, true, true);
+    search(columns, keyword, doSearchKeywordFuzzy, setGridHighlights, setGridHighlightsOverride, true, true);
   }
   const go2 = () => {
     console.log("-- START fuzzy search against list");
@@ -18,7 +18,7 @@ function Experiment5({keyword, columns, wordList, k, n, start, setGridHighlight,
         let result = 0;
         // let grid = createGrid(val[0], k, n, start);
         // let cols = columnsFrom(grid);
-        search(columns, val[0], doSearchKeywordFuzzy, setGridHighlight, setGridHighlightOverride, false, true);
+        search(columns, val[0], doSearchKeywordFuzzy, setGridHighlights, setGridHighlightsOverride, false, true);
       }
       count++;
       if (count % 10000 == 0) console.log(count);
@@ -147,7 +147,7 @@ function Experiment5({keyword, columns, wordList, k, n, start, setGridHighlight,
         col = item[1];
         if (Math.random() < 0.5) col++;
       }
-      let result = search(columns, searchname, doSearchKeywordFuzzy, setGridHighlight, setGridHighlightOverride, false, false);
+      let result = search(columns, searchname, doSearchKeywordFuzzy, setGridHighlights, setGridHighlightsOverride, false, false);
       if (result && searchname.length > 15) {
         console.log(searchname.length, scoresum, wordcount, searchname_spaces, result.penaltySkippedColumns, result.penaltySameColumn, result.penaltySkippedLetters);
         hits++;
@@ -444,7 +444,7 @@ function make_gh(columns) {
   }
   return [gh, gho];
 }
-function search(columns, keyword, doSearchKeywordFuzzy, setGridHighlight, setGridHighlightOverride, doHighlight, doPrint) {
+function search(columns, keyword, doSearchKeywordFuzzy, setGridHighlights, setGridHighlightsOverride, doHighlight, doPrint) {
   let result = null;
   let best_gh = [];
   let best_gho = [];
@@ -471,16 +471,10 @@ function search(columns, keyword, doSearchKeywordFuzzy, setGridHighlight, setGri
         }
       }
     }
-    // if (!result) {
-    //   for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
-    //     result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, false);
-    //     if (result) break;
-    //   }    
-    // }
     if (doPrint && result) console.log(keyword.length, keyword, result.penaltySkippedColumns, result.penaltySameColumn, result.penaltySkippedLetters);
     if (doHighlight) {
-      setGridHighlight(best_gh);
-      setGridHighlightOverride(best_gho);
+      setGridHighlights([best_gh]);
+      setGridHighlightsOverride([best_gho]);
     }
     if (result) return result; // exit early if we have a result.  otherwise, continue if we allow greater numbers of letter skips.
   }

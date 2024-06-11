@@ -52,17 +52,36 @@
   color: black;
   font-weight: bolder;
 }
+.col_end_highlight_top {
+  width: 45px;
+  height: 45px;
+  border: 1px solid black;
+  background-color: #DAA06D;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-weight: bolder;
+}
 
 .plaintext {
   background-color: #C1FFD5;
   font-weight: bold;
 }
 
-.highlight1 {
+.highlight_base_1 {
+  background-color: #FFDEAD;
+  font-weight: bold;
+}
+.highlight_base_2 {
   background-color: darkorange;
   font-weight: bold;
 }
-.highlight2 {
+.highlight_offset_1 {
+  background-color: #FFDEAD;
+  font-weight: bold;
+}
+.highlight_offset_2 {
   background-color: darkorange;
   font-weight: bold;
 }

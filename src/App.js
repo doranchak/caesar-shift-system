@@ -21,8 +21,9 @@ function App() {
   // gh[5][9] = 1;
   let gtmp = createGrid(plaintext, k, n, start);
   const [grid, setGrid] = useState(gtmp);
-  const [gridHighlight, setGridHighlight] = useState(createGridHighlightWithGrid(gtmp));  
-  const [gridHighlightOverride, setGridHighlightOverride] = useState([]);
+  // const [gridHighlights, setGridHighlights] = useState(createGridHighlightWithGrid([gtmp]));  
+  const [gridHighlights, setGridHighlights] = useState([]);  
+  const [gridHighlightsOverride, setGridHighlightsOverride] = useState([]);
   // string versions of grid columns for more convenient searching
   const [columns, setColumns] = useState(columnsFrom(gtmp));
   // search keyword
@@ -35,6 +36,11 @@ function App() {
   const [irregularShifts, setIrregularShifts] = useState([]);
 
   const [wordVizCounter, setWordVizCounter] = useState("");
+
+  // if true, stack the search results with each search instead of replacing them
+  const [stack, setStack] = useState(false);
+
+  const [topHighlight, setTopHighlight] = useState(true);
 
   const plaintextChange = (event) => {
     let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -63,6 +69,14 @@ function App() {
     let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
     setKeyword(val);
   };
+  const updateStack = (event) => {
+    let val = event.target.checked;
+    setStack(val);
+  };
+  const updateTopHighlight = (event) => {
+    let val = event.target.checked;
+    setTopHighlight(val);
+  };
   const doSearch = () => {
     init();
     let matches = doSearchKeyword(keyword, columns);
@@ -83,13 +97,19 @@ function App() {
   const doClear = (event) => {
     setSearchResult("");
     setKeyword("");
+    init();
+    setGridHighlights([]);
+    setGridHighlightsOverride([]);
+    updateGrid(plaintext, k, n, start);
   }
 
-  const valueForHighlight = (colIndex) => {
-    for (let row=0; row<gridHighlight.length; row++) {
-      if (gridHighlight[row][colIndex]) {
-        if (gridHighlightOverride[colIndex]) return gridHighlightOverride[colIndex];
-        else return grid[row][colIndex];
+  const valueForHighlight = (colIndex, gridHighlightsIndex) => {
+    for (let row=0; row<gridHighlights[gridHighlightsIndex].length; row++) {
+      if (gridHighlights[gridHighlightsIndex][row][colIndex]) {
+        if (gridHighlightsOverride && gridHighlightsOverride.length > gridHighlightsIndex && gridHighlightsOverride[gridHighlightsIndex][colIndex]) return gridHighlightsOverride[gridHighlightsIndex][colIndex];
+        else {
+          return grid[row][colIndex];
+        }
       }
     }
     return '';
@@ -98,20 +118,15 @@ function App() {
   // reset grid stuff to avoid side effects
   function init() {
     setIrregular(false); setIrregularShifts([]);
-    setGridHighlightOverride([]);
+    // setGridHighlights([]);
+    // setGridHighlightsOverride([]);
+    // console.log("ghs len", gridHighlights.length);
   }
   function updateGridPlaintext(plaintext) {
     updateGrid(plaintext, k, n, start);
   }
 
   function updateGrid(plaintext, k, n, start, highlights) {
-    // let gh = createGridHighlight(plaintext, k, n, start);
-    // if (highlights) {
-    //   highlights.map((h, index) => {
-    //     gh[h[0]][h[1]+1] = 1;
-    //   });
-    // }
-    // setGridHighlight(gh);
     if (irregular) {
       let grid = createGridStatic(plaintext, irregularShifts);
       setStart(0);
@@ -133,51 +148,62 @@ function App() {
   function updateGridWithGrid(grid, highlights) {
     setGrid(grid);
     let gh = createGridHighlightWithGrid(grid);
+    let doAdd = false;
     if (highlights) {
       highlights.map((h, index) => {
         gh[h[0]][h[1]+1] = 1;
+        doAdd = true;
       });
     }
-    setGridHighlight(gh);
-
+    if (doAdd) { // only add if we marked at least one to highlight
+      let ghs = gridHighlights;
+      if (stack) {
+        ghs.push(gh);
+      }
+      else ghs = [gh];
+      setGridHighlights(ghs);
+    }
     let cols = columnsFrom(grid);
     setColumns(cols);
   }
 
+  function selectInit() {
+    init(); setStack(false);
+  }
   function selectKaczynski1() {
-    init();
+    selectInit();
     updateGrid("KACZYNSKI", 10, 7, -30);
   }
   function selectKaczynski2() {
-    init();
+    selectInit();
     updateGrid("KACZYNSKI", 10, 7, -30, [[6,0],[1,1],[5,2],[0,3],[2,4],[3,5],[4,6]]);
   }
   function selectKaczynski3() {
-    init();
+    selectInit();
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[4,7],[1,8]]);
   }
   function selectKaczynski4() {
-    init();
+    selectInit();
     updateGrid("KACZYNSKI", 10, 7, -30, [[3,3],[4,4],[4,5],[4,6],[2,7],[2,8]]);
   }
   function selectTheodoreKaczynski1() {
-    init();
+    selectInit();
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30);
   }
   function selectTheodoreKaczynski2() {
-    init();
+    selectInit();
     updateGrid("THEODOREJKACZYNSKI", 10, 9, -30, [[4,1],[4,2],[6,3],[0,4],[6,5],[5,6],[4,8],[5,12],[6,13],[6,14],[6,15],[6,16],[3,17]]);
   }
   function selectTrees1() {
-    init();
+    selectInit();
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40);
   }
   function selectTrees2() {
-    init();
+    selectInit();
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40, [[1,0],[2,1],[1,2],[0,3],[0,5],[1,6],[2,7],[2,9],[4,10],[5,10],[2,11],[2,12],[1,13],[4,14],[1,17],[2,18]]);
   }
   function selectDatesGrid() {
-    init();
+    selectInit();
     let sh = [20, 12, 7, 4, 0, -4, -7, -12, -20];
     setIrregular(true);
     setIrregularShifts(sh);
@@ -195,7 +221,7 @@ function App() {
       }
       gridHighlight.push(row);
     }
-    setGridHighlight(gridHighlight);
+    setGridHighlights([gridHighlight]);
 
     let columns = columnsFrom(grid);
     setColumns(columns);    
@@ -234,21 +260,36 @@ function App() {
     let c = "col";
     if (shift == 0) c += " plaintext";
 
-    let highlight = 0;
-    if (gridHighlight && gridHighlight.length >= (row+1) && gridHighlight[row].length >= (col+1))
-      highlight = gridHighlight[row][col];
-    if (highlight) {
-      if (shift == 0) c += " highlight1";
-      else c += " highlight2"
+    let highlight = isCellHighlighted(row, col);
 
+    if (highlight) {
+      if (!topHighlight) highlight = 1;
+      if (shift == 0) c += " highlight_base_" + highlight;
+      else c += " highlight_offset_" + highlight;
     }
     if (col > 0) c += " letter_" + columns[col-1][row];
     return c;
   }
-  function clEnd(colIndex) {
-    let val = valueForHighlight(colIndex);
+
+  // is this cell part of a search result?
+  // returns 2 if most recent result
+  // returns 1 if not most recent result
+  // returns 0 if not part of any result
+  function isCellHighlighted(row, col) {
+    if (!gridHighlights || gridHighlights.length == 0) return false;
+    for (let i=gridHighlights.length-1; i>=0; i--) {
+      let gh = gridHighlights[i];
+      if (gh.length >= (row+1) && gh[row].length >= (col+1) && gh[row][col]) {
+        return i == gridHighlights.length - 1 ? 2 : 1;
+      }
+    }
+  }
+
+  function clEnd(colIndex, gridHighlightsIndex) {
+    let val = valueForHighlight(colIndex, gridHighlightsIndex);
+    let top = topHighlight && gridHighlightsIndex == gridHighlights.length - 1 ? "_top" : "";
     if (val == '') return 'col_end';
-    return 'col_end_highlight';
+    return 'col_end_highlight' + top;
   }
   function lettersFromColumns() {
     let letters = "";
@@ -346,13 +387,15 @@ function App() {
                       <tr>
                         <td></td>
                         <td><button onClick={doSearch}>Search</button><button onClick={doClear}>Clear</button>
+                          <div><input onChange={updateStack} type="checkbox" checked={stack}></input>Stack</div>
+                          <div><input onChange={updateTopHighlight} type="checkbox" checked={topHighlight}></input>TopHighlight</div>
                           <div>{searchResult}</div>                        
                           <div>
                           {searchResults.map((result, index) => (
                             <span key={index}>[<a href="#" className="nou" onClick={() => selectSearchResult(index)}>{index+1}</a>]</span>
                           ))}
                           </div>
-                          <AnimateAllWords rows={columns[0].length} cols={columns.length} wordLength={5} setGridHighlight={setGridHighlight} setWordVizCounter={setWordVizCounter}></AnimateAllWords>
+                          <AnimateAllWords rows={columns[0].length} cols={columns.length} wordLength={5} setGridHighlights={setGridHighlights} setWordVizCounter={setWordVizCounter}></AnimateAllWords>
                           <AnimatePaint styleSheet={document.styleSheets[2]} letters={lettersFromColumns()}></AnimatePaint>
                         </td>
                       </tr>
@@ -360,7 +403,7 @@ function App() {
                   </table>
               </td>
               <td>
-                <FindWords columns={columns} doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate} createGrid={createGrid} columnsFrom={columnsFrom} setGridHighlight={setGridHighlight} setGridHighlightOverride={setGridHighlightOverride} k={k} n={n} start={start} keyword={keyword}/>
+                <FindWords columns={columns} doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate} createGrid={createGrid} columnsFrom={columnsFrom} setGridHighlights={setGridHighlights} setGridHighlightsOverride={setGridHighlightsOverride} k={k} n={n} start={start} keyword={keyword}/>
               </td>
             </tr>
           </tbody>
@@ -377,16 +420,18 @@ function App() {
                       ))}
                     </div>
                   ))}
-                    <div className="row_end">
+                  {gridHighlights.map((gh, i) => (
+                    <div className="row_end" key={i}>
                       {grid[0].map((col, colIndex) => (
-                        <div className={clEnd(colIndex)} key={colIndex}>{valueForHighlight(colIndex)}</div>
+                        <div className={clEnd(colIndex, i)} key={colIndex}>{valueForHighlight(colIndex, i)}</div>
                       ))}
                     </div>
-                    {wordVizCounter && 
-                      <div className="counter">
-                        {wordVizCounter}
-                      </div>
-                    }
+                  ))}
+                  {wordVizCounter && 
+                    <div className="counter">
+                      {wordVizCounter}
+                    </div>
+                  }
                 </div>
               </td>
             </tr>
