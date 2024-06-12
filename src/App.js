@@ -15,13 +15,8 @@ function App() {
   // start
   const [start, setStart] = useState(-40);
   // grid
-  // let gh = createGridHighlight(plaintext, k, n, start);
-  // gh[1][13] = 1;
-  // gh[3][2] = 1;
-  // gh[5][9] = 1;
   let gtmp = createGrid(plaintext, k, n, start);
   const [grid, setGrid] = useState(gtmp);
-  // const [gridHighlights, setGridHighlights] = useState(createGridHighlightWithGrid([gtmp]));  
   const [gridHighlights, setGridHighlights] = useState([]);  
   const [gridHighlightsOverride, setGridHighlightsOverride] = useState([]);
   // string versions of grid columns for more convenient searching
@@ -31,7 +26,7 @@ function App() {
   // search results
   const [searchResults, setSearchResults] = useState([]);
   const [searchResult, setSearchResult] = useState(null);
-
+  // no pattern to the shift values
   const [irregular, setIrregular] = useState(false);
   const [irregularShifts, setIrregularShifts] = useState([]);
 
@@ -39,9 +34,22 @@ function App() {
 
   // if true, stack the search results with each search instead of replacing them
   const [stack, setStack] = useState(false);
-
+  // if true, most recent search result gets extra highlight
   const [topHighlight, setTopHighlight] = useState(true);
 
+  const updateGridHighlights = (gh) => {
+    if (stack) {
+      let arr = [];
+      gridHighlights.map((item, index) => arr.push(item));
+      gridHighlights.push(gh);
+    }
+    else setGridHighlights([gh]);
+    updateGrid(plaintext, k, n, start);
+  }
+  const updateGridHighlightsOverride = (gho) => {
+    if (stack) gridHighlightsOverride.push(gho);
+    else setGridHighlightsOverride([gho]);
+  }
   const plaintextChange = (event) => {
     let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
     setPlaintext(val);
@@ -403,7 +411,7 @@ function App() {
                   </table>
               </td>
               <td>
-                <FindWords columns={columns} doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate} createGrid={createGrid} columnsFrom={columnsFrom} setGridHighlights={setGridHighlights} setGridHighlightsOverride={setGridHighlightsOverride} k={k} n={n} start={start} keyword={keyword}/>
+                <FindWords columns={columns} doSearchKeyword={doSearchKeyword} doSearchUpdate={doSearchUpdate} createGrid={createGrid} columnsFrom={columnsFrom} updateGridHighlights={updateGridHighlights} updateGridHighlightsOverride={updateGridHighlightsOverride} k={k} n={n} start={start} keyword={keyword}/>
               </td>
             </tr>
           </tbody>
@@ -441,8 +449,6 @@ function App() {
     </>
   );
 }
-
-
 
 function style(row, col, val) {
 }
