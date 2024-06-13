@@ -94,11 +94,12 @@ function App() {
   const doSearchUpdate = (matches) => {
     if (matches.length == 0) {
       setSearchResult("No results.");
-      updateGrid(plaintext, k, n, start, []);
+      if (!irregular) updateGrid(plaintext, k, n, start, []);
     }
     else {
       setSearchResult(matches.length + " matches.");
-      updateGrid(plaintext, k, n, start, matches[0]);
+      if (irregular) selectDatesGrid(matches[0]);  
+      else updateGrid(plaintext, k, n, start, matches[0]);
     }
     setSearchResults(matches);
   }
@@ -126,9 +127,6 @@ function App() {
   // reset grid stuff to avoid side effects
   function init() {
     setIrregular(false); setIrregularShifts([]);
-    // setGridHighlights([]);
-    // setGridHighlightsOverride([]);
-    // console.log("ghs len", gridHighlights.length);
   }
   function updateGridPlaintext(plaintext) {
     updateGrid(plaintext, k, n, start);
@@ -210,7 +208,7 @@ function App() {
     selectInit();
     updateGrid("TREESTOBLOOMINWEEKS", 10, 6, -40, [[1,0],[2,1],[1,2],[0,3],[0,5],[1,6],[2,7],[2,9],[4,10],[5,10],[2,11],[2,12],[1,13],[4,14],[1,17],[2,18]]);
   }
-  function selectDatesGrid() {
+  function selectDatesGrid(highlights) {
     selectInit();
     let sh = [20, 12, 7, 4, 0, -4, -7, -12, -20];
     setIrregular(true);
@@ -228,6 +226,11 @@ function App() {
         row.push(0);
       }
       gridHighlight.push(row);
+    }
+    if (highlights) {
+      highlights.map((h, index) => {
+        gridHighlight[h[0]][parseInt(h[1])+1] = 1;
+      });
     }
     setGridHighlights([gridHighlight]);
 
@@ -323,7 +326,7 @@ function App() {
                 <a href="#" onClick={selectTheodoreKaczynski2}>[2]</a><br></br>
                 Trees <a href="#" onClick={selectTrees1}>[1]</a>
                 <a href="#" onClick={selectTrees2}>[2]</a><br></br>
-                Dates Grid<a href="#" onClick={selectDatesGrid}>[1]</a>
+                Dates Grid<a href="#" onClick={() => selectDatesGrid(null)}>[1]</a>
               </td>
               <td>
                 <table>
