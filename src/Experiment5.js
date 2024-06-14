@@ -445,69 +445,48 @@ function make_gh(columns) {
   return [gh, gho];
 }
 function search(columns, keyword, doSearchKeywordFuzzy, updateGridHighlights, updateGridHighlightsOverride, doHighlight, doPrint) {
-  let result = null;
-  let best_gh = [];
-  let best_gho = [];
-
+  let bestState = null;
   for (let maxskip=0; maxskip<=MAX_SKIPPED_LETTERS; maxskip++) {
     for (let currentColumn=0; currentColumn<columns.length; currentColumn++) {
-      let [gh, gho] = make_gh(columns);
-      let current_result = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, maxskip);
-      if (current_result) {
-        console.log(" - intermediate result", keyword.length, keyword, current_result.penaltySkippedColumns, current_result.penaltySameColumn, current_result.penaltySkippedLetters);        
-        if (!result) {
-          result = current_result;
-          best_gh = gh;
-          best_gho = gho;
-        } else {
-          // keep only if current result is better
-          if (current_result.penaltySkippedLetters > result.penaltySkippedLetters) {
-            
-          } else if (score(current_result) < score(result)) {
-            result = current_result;
-            best_gh = gh;
-            best_gho = gho;
-          }
-        }
-      }
+      bestState = searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, maxskip, bestState);
     }
-    if (doPrint && result) console.log(keyword.length, keyword, result.penaltySkippedColumns, result.penaltySameColumn, result.penaltySkippedLetters);
-    if (result) {
-      if (doHighlight) {
-        updateGridHighlights(best_gh);
-        updateGridHighlightsOverride(best_gho);
-      }
-      return result; // exit early if we have a result.  otherwise, continue if we allow greater numbers of letter skips.
+    if (bestState) break; // break early if we found one because it will the best so far.
+  }
+
+  if (bestState) { 
+    let [gh, gho] = make_gh(columns);
+    for (let i=0; i<bestState.currentPositions.length; i++) {
+      let row = bestState.currentPositions[i][0];
+      let col = bestState.currentPositions[i][1];
+      gh[row][col+1] = 1;
     }
+    // special case: more than one letter in a column
+    bestState.currentPositions.map((val, index) => {
+      let row = val[0];
+      let col = val[1]+1;
+      let letter = columns[col-1][row];
+      if (!gho[col]) gho[col] = letter;
+      else gho[col] += letter;
+    });
+    if (doPrint) 
+      console.log(keyword.length, keyword, bestState.bestScore, bestState.penaltySkippedColumns, bestState.penaltySameColumn, bestState.penaltySkippedLetters);
+    if (doHighlight) {
+      updateGridHighlights(gh);
+      updateGridHighlightsOverride(gho);
+    }
+    return bestState;
   }
   // if we got this far, no result.
-  console.log("NO RESULT");
+  // console.log("NO RESULT");
 }
 function score(result) {
   return result.penaltySkippedColumns + result.penaltySameColumn;
 }
-function searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, gh, gho, noskip) {
-  let state = {keyword, columns, currentColumn};
-  let result = doSearchKeywordFuzzy(state, noskip);
-  if (result) { 
-    for (let i=0; i<state.currentPositions.length; i++) {
-      let row = state.currentPositions[i][0];
-      let col = state.currentPositions[i][1];
-      gh[row][col+1] = 1;
-    }
-    // special case: more than one letter in a column
-    // console.log(state.currentPositions);
-    state.currentPositions.map((val, index) => {
-      let row = val[0];
-      let col = val[1]+1;
-      let letter = columns[col-1][row];
-      // console.log(row, col, letter);
-      if (!gho[col]) gho[col] = letter;
-      else gho[col] += letter;
-    });
-    return state;
-  }
-  return null;
+// returns the best-seen result
+function searchSub(keyword, columns, currentColumn, doSearchKeywordFuzzy, noskip, bestState) {
+  let state = {keyword, columns, currentColumn, bestState, bestScore: bestState ? bestState.bestScore : Number.MAX_SAFE_INTEGER};
+  doSearchKeywordFuzzy(state, noskip);
+  return state.bestState;
 }
 
 function makeName(names_last, names_first_male, names_first_female) {

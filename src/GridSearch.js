@@ -1,6 +1,9 @@
 const MAX_SKIPPED_COLUMNS = 10;
 const MAX_SAME_COLUMN = 10;
 const MAX_SKIPPED_LETTERS = 1;
+const WEIGHT_SKIPPED_COLUMNS = 1;
+const WEIGHT_SAME_COLUMN = 1;
+const SHOW_INTERMEDIATE = false;
 
 const doSearchKeyword = (word, columns) => {
   let matches = [];
@@ -22,8 +25,6 @@ const doSearchKeyword = (word, columns) => {
   return matches;
 }
 
-// TODO: bug: JARLVANEYCKE 
-
 // returns true once a match is found
 const doSearchKeywordFuzzy = (state, maxskip) => {
   let rows = state.columns[0].length;
@@ -40,6 +41,7 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
     state.matchCount = 0;  // number of letter matches
     state.currentPositions = []; // current positions found so far
     state.visited = []; // to mark visited positions in the grid
+    // if (!('bestScore' in state)) state.bestScore = Number.MAX_SAFE_INTEGER;
     for (let row=0; row<rows; row++) {
       state.visited[row] = [];
       for (let col=0; col<cols; col++) {
@@ -48,15 +50,18 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
     }
   }
   // check termination conditions
-  if (state.penaltySkippedColumns > MAX_SKIPPED_COLUMNS) return false;
-  if (state.penaltySameColumn > MAX_SAME_COLUMN) return false;
-  if (state.penaltySkippedLetters > maxskip) return false;
+  if (state.penaltySkippedColumns > MAX_SKIPPED_COLUMNS) return false; // too many skipped columns
+  if (state.penaltySameColumn > MAX_SAME_COLUMN) return false; // too many shared columns
+  if (state.penaltySkippedLetters > maxskip) return false; // too many skipped letters
+  if (SHOW_INTERMEDIATE && (state.currentMatch == state.keyword || state.currentMatch.length == state.keyword.length - state.penaltySkippedLetters))
+    console.log(" - intermediate hit:", state.keyword.length, state.keyword, score(state), state.penaltySkippedColumns, state.penaltySameColumn, state.penaltySkippedLetters);
+    
+  if (score(state) >= state.bestScore) return false; // we already exceeded the best score seen
   
   if (state.currentMatch == state.keyword || state.currentMatch.length == state.keyword.length - state.penaltySkippedLetters) {
-    // console.log("SUCCESS! ", state);
-    // updateGrid(plaintext, k, n, start, state.currentPositions);
-    // TODO: calculate penaltySameColumn
-    return true;
+    state.bestScore = score(state);
+    state.bestState = null;
+    state.bestState = JSON.parse(JSON.stringify(state));
   }
   if (state.currentColumn >= state.columns.length) return false;
   if (state.currentLetter >= state.keyword.length) return false;
@@ -65,16 +70,13 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
   for (let row=0; row<rows; row++) {
     if (state.columns[state.currentColumn][row] == state.keyword[state.currentLetter]) {
       // found match, so continue to next column and next letter.
-      // console.log("matched a letter", state.keyword[state.currentLetter]);
       state.currentMatch += state.keyword[state.currentLetter];
       state.matchCount++;
       state.currentPositions.push([row, state.currentColumn]);
       state.visited[row][state.currentColumn] = 1;
       state.currentColumn++;
       state.currentLetter++;
-      if (doSearchKeywordFuzzy(state, maxskip)) {
-        return true;
-      }
+      doSearchKeywordFuzzy(state, maxskip);
       undoStep(state, row);
     }
   }
@@ -83,23 +85,17 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
   if (state.startColumn != state.currentColumn) {
     state.penaltySkippedColumns++;
     state.currentColumn++;
-    // console.log("skipping a column");
-    if (doSearchKeywordFuzzy(state, maxskip)) {
-      return true;
-    }
+    doSearchKeywordFuzzy(state, maxskip);
     state.penaltySkippedColumns--;
     state.currentColumn--;
   }
 
   // not found, so return to last matched column and look for letter in unvisited spot
-  if (state.currentColumn > 0) {
-    // console.log("trying same column again");
+  if (state.currentColumn > 0 && state.currentColumn > state.startColumn) {
     state.currentColumn--;
     for (let row=0; row<rows; row++) {
       if (state.visited[row][state.currentColumn]) continue;
-      // TODO: "KACZYNSKI" search breaks at next line
       if (state.columns[state.currentColumn][row] == state.keyword[state.currentLetter]) {
-        // console.log("found another letter in same column", state.keyword[state.currentLetter]);
         state.currentMatch += state.keyword[state.currentLetter];
         state.matchCount++;
         state.currentPositions.push([row, state.currentColumn]);
@@ -107,9 +103,7 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
         state.currentColumn++;
         state.currentLetter++;
         state.penaltySameColumn++;
-        if (doSearchKeywordFuzzy(state, maxskip)) {
-          return true;
-        }
+        doSearchKeywordFuzzy(state, maxskip);
         undoStep(state, row);
         state.penaltySameColumn--;
       }
@@ -118,17 +112,19 @@ const doSearchKeywordFuzzy = (state, maxskip) => {
   }
 
   // still not found, so try skipping a letter of the search term
-  // if (state.currentMatch == "THEODOREKAC") console.log("gonna skip letter", state.keyword[state.currentLetter], "match", state.currentMatch, "current col", state.currentColumn);
   state.penaltySkippedLetters++;
   state.currentLetter++;
-  if (doSearchKeywordFuzzy(state, maxskip)) {
-    return true;
-  }
+  doSearchKeywordFuzzy(state, maxskip);
   state.penaltySkippedLetters--;
   state.currentLetter--;
   // updateGrid(plaintext, k, n, start, []);
   return false;
 }
+
+function score(result) {
+  return WEIGHT_SKIPPED_COLUMNS*result.penaltySkippedColumns + WEIGHT_SAME_COLUMN*result.penaltySameColumn;
+}
+
 const undoStep = (state, row) => {
   state.currentColumn--;
   state.currentLetter--;
