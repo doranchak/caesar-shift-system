@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import FindWords from './FindWords.js';
 import AnimateAllWords from './AnimateAllWords.js';
 import AnimatePaint from './AnimatePaint.js';
+import AnimateReading from './AnimateReading.js';
 import {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift} from './GridSearch.js';
 import './App.css';
 
@@ -31,6 +32,8 @@ function App() {
   const [irregularShifts, setIrregularShifts] = useState([]);
 
   const [wordVizCounter, setWordVizCounter] = useState("");
+  const [readingVizCol, setReadingVizCol] = useState(-1);
+  const [readingVizRow, setReadingVizRow] = useState(-1);
 
   // if true, stack the search results with each search instead of replacing them
   const [stack, setStack] = useState(false);
@@ -267,6 +270,10 @@ function App() {
   }
 
   function cl(row, col) {
+    if (readingVizCol == col) {
+      if (readingVizRow == row) return "col reading2";
+      return "col reading1";
+    }
     let shift = irregular ? irregularShifts[row] : (n-1-row)*k + start;
     let c = "col";
     if (shift == 0) c += " plaintext";
@@ -408,6 +415,7 @@ function App() {
                           </div>
                           <AnimateAllWords rows={columns[0].length} cols={columns.length} wordLength={5} setGridHighlights={setGridHighlights} setWordVizCounter={setWordVizCounter}></AnimateAllWords>
                           <AnimatePaint styleSheet={document.styleSheets[2]} letters={lettersFromColumns()}></AnimatePaint>
+                          <AnimateReading setReadingVizRow={setReadingVizRow} setReadingVizCol={setReadingVizCol} rows={columns[0].length} cols={columns.length}></AnimateReading>
                         </td>
                       </tr>
                     </tbody>

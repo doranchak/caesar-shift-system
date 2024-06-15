@@ -86,9 +86,12 @@
   font-weight: bold;
 }
 
-@keyframes high {
-  from {background-color: orange; color: #ddd;}
-  to {background-color: lightyellow; color: black;}
+.reading1 {
+  background-color: #FFDEAD;
+}
+
+.reading2 {
+  background-color: darkorange;  
 }
 
 .controls {
@@ -102,3 +105,4 @@
   color: black;
   margin-top: 1em;
 }
+
