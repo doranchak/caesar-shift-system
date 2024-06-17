@@ -3,6 +3,7 @@ import FindWords from './FindWords.js';
 import AnimateAllWords from './AnimateAllWords.js';
 import AnimatePaint from './AnimatePaint.js';
 import AnimateReading from './AnimateReading.js';
+import AnimateScan from './AnimateScan.js';
 import {doSearchKeyword, doSearchKeywordFuzzy, undoStep, columnsFrom, createGrid, createGridStatic, caesarShift} from './GridSearch.js';
 import './App.css';
 
@@ -34,6 +35,7 @@ function App() {
   const [wordVizCounter, setWordVizCounter] = useState("");
   const [readingVizCol, setReadingVizCol] = useState(-1);
   const [readingVizRow, setReadingVizRow] = useState(-1);
+  const [scanVizGrid, setScanVizGrid] = useState(null);  
 
   // if true, stack the search results with each search instead of replacing them
   const [stack, setStack] = useState(false);
@@ -52,6 +54,19 @@ function App() {
   const updateGridHighlightsOverride = (gho) => {
     if (stack) gridHighlightsOverride.push(gho);
     else setGridHighlightsOverride([gho]);
+  }
+  const updateScanVizGrid = (diagonal) => {
+    let sg = [];
+    for (let row=0; row<columns[0].length; row++) {
+      sg[row] = [];
+      for (let col=0; col<columns.length; col++) {
+        sg[row][col] = 0;
+      }
+    }
+    diagonal.map((diag, index) => {
+      sg[diag[0]][diag[1]] = 1;
+    });
+    setScanVizGrid(sg);
   }
   const plaintextChange = (event) => {
     let val = event.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -270,6 +285,7 @@ function App() {
   }
 
   function cl(row, col) {
+    if (scanVizGrid && scanVizGrid[row][col-1]) return "col scan";
     if (readingVizCol == col) {
       if (readingVizRow == row) return "col reading2";
       return "col reading1";
@@ -416,6 +432,7 @@ function App() {
                           <AnimateAllWords rows={columns[0].length} cols={columns.length} wordLength={5} setGridHighlights={setGridHighlights} setWordVizCounter={setWordVizCounter}></AnimateAllWords>
                           <AnimatePaint styleSheet={document.styleSheets[2]} letters={lettersFromColumns()}></AnimatePaint>
                           <AnimateReading setReadingVizRow={setReadingVizRow} setReadingVizCol={setReadingVizCol} rows={columns[0].length} cols={columns.length}></AnimateReading>
+                          <AnimateScan updateScanVizGrid={updateScanVizGrid} rows={columns[0].length} cols={columns.length}></AnimateScan>
                         </td>
                       </tr>
                     </tbody>

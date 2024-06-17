@@ -94,6 +94,12 @@
   background-color: darkorange;  
 }
 
+.scan {
+  background-color: darkred;
+  color: white;
+  font-weight: bold;
+}
+
 .controls {
   margin-right: 3em;
 }
@@ -105,4 +111,3 @@
   color: black;
   margin-top: 1em;
 }
-
